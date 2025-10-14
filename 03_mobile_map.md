@@ -502,6 +502,232 @@ map.locate({
 3. **データ保存**：位置情報を保存する場合は適切な暗号化を行う
 4. **透明性**：なぜ位置情報が必要か、どう使用するかを説明する
 
+## 💪 練習問題
+
+モバイル対応マップの理解を深めるための演習です。
+
+### 演習1：位置情報ボタンの追加（初級）
+
+**課題：** 現在位置に移動するボタンをマップに追加してください。
+
+**要件：**
+- ボタンをクリックすると現在位置に地図が移動
+- 現在位置にマーカーを表示
+- ボタンはマップの左上に配置
+
+<details>
+<summary>💡 実装のヒント</summary>
+
+```
+1. L.Control.extend() を使用してカスタムコントロールを作成
+
+2. onAdd メソッドでボタンを作成：
+   - L.DomUtil.create() でボタン要素を作成
+   - onclick イベントで map.locate() を呼び出し
+
+3. locationfound イベントでマーカーを配置：
+   map.on('locationfound', function(e) {
+       L.marker(e.latlng).addTo(map);
+       map.setView(e.latlng, 16);
+   });
+
+4. position: 'topleft' でコントロールを配置
+```
+</details>
+
+### 演習2：移動経路の記録（中級）
+
+**課題：** ユーザーの移動経路をリアルタイムで記録し、地図上に線で表示してください。
+
+**要件：**
+- 位置追跡を開始/停止するボタン
+- 移動経路をポリラインで表示
+- 移動距離の合計を表示
+- 経路の色を変更できる機能
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+**ChatGPT/Claude等へのプロンプト：**
+
+```
+Leaflet.jsでユーザーの移動経路を記録する機能を実装したいです。
+
+【現在の状態】
+- 基本的なモバイルマップは実装済み
+- map.locate() で位置情報取得は可能
+
+【実現したい機能】
+1. 「記録開始」「記録停止」ボタンを追加
+2. 記録中は locationfound イベントで位置を配列に保存
+3. 保存した位置をつなぐポリラインを描画
+4. 各地点間の距離を計算し、合計距離を表示
+
+【技術的な要求】
+- map.locate({watch: true}) で継続的に位置を取得
+- L.polyline() で経路を描画
+- latlng.distanceTo() で距離を計算
+- カスタムコントロールでUIを実装
+
+【コードスタイル】
+- 日本語コメント
+- グローバル変数を避けてオブジェクトにまとめる
+- 初心者にもわかりやすい実装
+```
+
+**実装のコアアイディア：**
+```javascript
+var tracking = {
+    active: false,
+    points: [],
+    polyline: null,
+    totalDistance: 0
+};
+
+function startTracking() {
+    tracking.active = true;
+    tracking.points = [];
+    tracking.totalDistance = 0;
+    map.locate({watch: true, enableHighAccuracy: true});
+}
+
+map.on('locationfound', function(e) {
+    if (!tracking.active) return;
+
+    var newPoint = e.latlng;
+
+    if (tracking.points.length > 0) {
+        var lastPoint = tracking.points[tracking.points.length - 1];
+        tracking.totalDistance += lastPoint.distanceTo(newPoint);
+    }
+
+    tracking.points.push(newPoint);
+
+    if (tracking.polyline) {
+        map.removeLayer(tracking.polyline);
+    }
+
+    tracking.polyline = L.polyline(tracking.points, {
+        color: 'blue',
+        weight: 4
+    }).addTo(map);
+});
+```
+</details>
+
+### 演習3：オフライン対応マップ（上級）
+
+**課題：** Service Workerを使用して、オフラインでも動作するモバイルマップを実装してください。
+
+**要件：**
+- Service Workerでタイル画像をキャッシュ
+- オフライン時にキャッシュから表示
+- オンライン/オフライン状態の表示
+- キャッシュクリア機能
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+**段階的なアプローチ：**
+
+```
+【ステップ1: Service Workerの基本】
+「Leaflet.jsのタイルマップをService Workerでキャッシュする方法を教えてください。
+以下の情報を含めてください：
+- service-worker.js の基本構造
+- install イベントでのキャッシュ作成
+- fetch イベントでのキャッシュ優先戦略」
+
+【ステップ2: タイルURLのキャッシュ】
+「OpenStreetMapのタイルURL（https://tile.openstreetmap.org/{z}/{x}/{y}.png）
+を動的にキャッシュする方法を教えてください。
+- ワイルドカードパターンのマッチング
+- キャッシュサイズの制限
+- 古いキャッシュの削除」
+
+【ステップ3: オフライン検知】
+「navigator.onLine を使ってオフライン状態を検知し、
+ユーザーに通知する機能を追加してください。
+- online/offline イベントのリスナー
+- 通知バナーの表示/非表示
+- キャッシュ利用中のインジケーター」
+
+【ステップ4: キャッシュ管理】
+「ユーザーがキャッシュをクリアできるボタンを実装してください：
+- caches.delete() の使用
+- キャッシュサイズの表示
+- 確認ダイアログ」
+```
+
+**重要な概念：**
+```javascript
+// service-worker.js
+const CACHE_NAME = 'leaflet-map-v1';
+
+self.addEventListener('fetch', function(event) {
+    if (event.request.url.includes('tile.openstreetmap.org')) {
+        event.respondWith(
+            caches.match(event.request).then(function(response) {
+                return response || fetch(event.request).then(function(response) {
+                    return caches.open(CACHE_NAME).then(function(cache) {
+                        cache.put(event.request, response.clone());
+                        return response;
+                    });
+                });
+            })
+        );
+    }
+});
+```
+</details>
+
+### 🎓 学習のポイント
+
+**モバイル対応の考え方：**
+
+1. **パフォーマンス**: タッチ操作の応答性が重要
+2. **バッテリー消費**: 高精度モードと通常モードのバランス
+3. **UX**: モバイル特有の操作（ピンチズーム、スワイプ）を考慮
+4. **接続環境**: オンライン/オフラインの切り替えに対応
+
+**デバッグのコツ：**
+- Chrome DevToolsのモバイルエミュレーター
+- 実機でのテスト（iOSとAndroid両方）
+- 位置情報のシミュレーション機能を活用
+- Network throttling で低速回線をテスト
+
+### 📝 LLM活用：モバイル開発特有のプロンプト
+
+**位置情報関連：**
+```
+「Leaflet.jsで位置情報が取得できない場合のエラーハンドリングを実装してください。
+以下のケースに対応：
+1. ユーザーが位置情報を拒否
+2. 位置情報APIがサポートされていない
+3. タイムアウト
+4. 精度が低すぎる場合
+それぞれに適切なメッセージを表示してください。」
+```
+
+**レスポンシブデザイン：**
+```
+「Leaflet.jsのマップをレスポンシブにし、画面サイズに応じてコントロールの配置を変更したいです。
+- デスクトップ: サイドバー + マップ
+- タブレット: 折りたたみ可能なサイドバー
+- スマートフォン: フルスクリーンマップ + 引き出しメニュー
+CSSメディアクエリとJavaScriptの組み合わせで実装してください。」
+```
+
+**タッチ操作最適化：**
+```
+「モバイルデバイスでのLeaflet.jsマップのタッチ操作を改善したいです：
+1. ボタンのタップターゲットを大きくする（最低44x44px）
+2. スワイプジェスチャーでサイドパネルを開閉
+3. 長押しでコンテキストメニュー表示
+4. ダブルタップで詳細情報表示
+実装例とベストプラクティスを教えてください。」
+```
+
 ## 次のステップ
 
 - [04_geojson.md](04_geojson.md)：GeoJSONデータの使用

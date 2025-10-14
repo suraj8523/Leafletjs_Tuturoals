@@ -651,6 +651,294 @@ function onEachFeature(feature, layer) {
 }
 ```
 
+## 💪 練習問題
+
+データ可視化の理解を深めるための演習です。
+
+### 演習1：カテゴリー別の色分け（初級）
+
+**課題：** 連続的なデータではなく、カテゴリー別（例：土地利用区分）に色分けしたマップを作成してください。
+
+**要件：**
+- 5つの異なるカテゴリー（住宅、商業、工業、公園、その他）
+- 各カテゴリーに明確に異なる色を割り当て
+- 凡例にカテゴリー名と色を表示
+- クリックで詳細情報を表示
+
+<details>
+<summary>💡 実装のヒント</summary>
+
+```
+1. カテゴリーから色へのマッピング：
+   function getCategoryColor(category) {
+       var colors = {
+           '住宅': '#e74c3c',
+           '商業': '#3498db',
+           '工業': '#95a5a6',
+           '公園': '#27ae60',
+           'その他': '#f39c12'
+       };
+       return colors[category] || '#cccccc';
+   }
+
+2. スタイル関数で適用：
+   function style(feature) {
+       return {
+           fillColor: getCategoryColor(feature.properties.landUse),
+           weight: 1,
+           color: 'white',
+           fillOpacity: 0.7
+       };
+   }
+
+3. 凡例は categories 配列でループ処理
+```
+</details>
+
+### 演習2：インタラクティブデータフィルター（中級）
+
+**課題：** スライダーを使って、特定の値以上/以下のエリアのみを表示するフィルター機能を実装してください。
+
+**要件：**
+- HTMLのrange inputでスライダーを作成
+- スライダー値に応じてGeoJSONをフィルタリング
+- フィルター適用中のエリア数を表示
+- フィルター条件をテキストで表示
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+**ChatGPT/Claude等へのプロンプト：**
+
+```
+Leaflet.jsのコロプレスマップに、スライダーでデータをフィルタリングする機能を追加したいです。
+
+【現在の状態】
+- 人口密度を色分けしたコロプレスマップあり
+- GeoJSON データは geojsonData 変数に格納
+
+【実現したい機能】
+1. HTML range input スライダー（最小値0、最大値25000）
+2. スライダー値以上の人口密度を持つエリアのみ表示
+3. リアルタイムで地図を更新
+4. 「表示中: X件 / 全Y件」と表示
+5. 現在のフィルター値をテキスト表示
+
+【技術的な要求】
+- input イベントでスライダー変更を検知
+- L.geoJSON の filter オプションでフィルタリング
+- 既存レイヤーを削除してから新しいレイヤーを追加
+- パフォーマンス考慮（デバウンス不要、即座に反映）
+
+【コードスタイル】
+- 日本語コメント
+- フィルター条件は関数で分離
+- 初心者にもわかりやすい実装
+```
+
+**実装のコアアイディア：**
+```javascript
+var slider = document.getElementById('densitySlider');
+var filterValue = document.getElementById('filterValue');
+var countDisplay = document.getElementById('count');
+
+var allFeatures = geojsonData.features;
+var geojsonLayer = null;
+
+slider.addEventListener('input', function(e) {
+    var minDensity = parseInt(e.target.value);
+    filterValue.textContent = minDensity.toLocaleString();
+
+    // 既存レイヤーを削除
+    if (geojsonLayer) {
+        map.removeLayer(geojsonLayer);
+    }
+
+    // フィルタリング
+    var filteredData = {
+        type: 'FeatureCollection',
+        features: allFeatures.filter(function(feature) {
+            return feature.properties.density >= minDensity;
+        })
+    };
+
+    // 新しいレイヤーを追加
+    geojsonLayer = L.geoJSON(filteredData, {
+        style: style,
+        onEachFeature: onEachFeature
+    }).addTo(map);
+
+    // 件数表示
+    countDisplay.textContent = '表示中: ' + filteredData.features.length +
+                                ' / 全' + allFeatures.length + '件';
+});
+```
+</details>
+
+### 演習3：時系列データアニメーション（上級）
+
+**課題：** 複数年のデータを持つコロプレスマップで、年度を切り替えるとアニメーションで色が変わる機能を実装してください。
+
+**要件：**
+- 2020〜2024年の5年分のデータ
+- 再生/停止ボタン
+- 年度スライダーで手動操作も可能
+- トランジション効果で滑らかに色変化
+- 現在表示中の年度を大きく表示
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+**段階的なアプローチ：**
+
+```
+【ステップ1: データ構造の設計】
+「複数年度のデータを持つGeoJSON構造を設計してください。
+
+【要件】
+- 各フィーチャーの properties に年度別データを格納
+  例: data_2020, data_2021, data_2022, data_2023, data_2024
+- 年度を指定すると該当年のデータを取得する関数
+- エラーハンドリング（データがない年度）
+
+データ構造の例とアクセス関数を提供してください。」
+
+【ステップ2: 年度切り替え機能】
+「指定した年度のデータでコロプレスマップを更新する関数を実装してください：
+- updateYear(year) 関数
+- 既存のGeoJSONレイヤーを削除せずにスタイルのみ更新
+- layer.setStyle() で各ポリゴンの色を変更
+- パフォーマンスを考慮した実装」
+
+【ステップ3: アニメーション制御】
+「年度を自動的に切り替えるアニメーション機能を追加してください：
+- 再生/停止ボタン
+- setInterval で1秒ごとに年度を進める
+- 最後の年度に達したら最初に戻る
+- 停止時は現在の年度を維持」
+
+【ステップ4: CSS トランジション】
+「色の変化を滑らかにするCSSトランジションを追加してください：
+- SVG path要素に transition プロパティ
+- fill プロパティに0.5秒のトランジション
+- easing関数で自然な動き
+- Leaflet のペインに CSS を適用する方法」
+```
+
+**重要な概念：**
+```javascript
+var currentYear = 2020;
+var animationInterval = null;
+var isPlaying = false;
+
+function updateMapForYear(year) {
+    geojsonLayer.eachLayer(function(layer) {
+        var feature = layer.feature;
+        var data = feature.properties['data_' + year];
+
+        if (data !== undefined) {
+            var color = getColor(data);
+            layer.setStyle({
+                fillColor: color
+            });
+        }
+    });
+
+    document.getElementById('current-year').textContent = year + '年';
+}
+
+function startAnimation() {
+    if (isPlaying) return;
+    isPlaying = true;
+
+    animationInterval = setInterval(function() {
+        currentYear++;
+        if (currentYear > 2024) {
+            currentYear = 2020;
+        }
+        updateMapForYear(currentYear);
+    }, 1000);
+}
+
+function stopAnimation() {
+    isPlaying = false;
+    if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
+}
+
+// CSSでトランジション追加
+var style = document.createElement('style');
+style.textContent = '.leaflet-overlay-pane svg path { transition: fill 0.5s ease; }';
+document.head.appendChild(style);
+```
+</details>
+
+### 🎓 学習のポイント
+
+**データ可視化の原則：**
+
+1. **色選択**: 直感的で色覚障害に配慮したカラーパレット
+2. **凡例**: 必ず凡例を提供し、データの意味を明確に
+3. **インタラクション**: ホバー、クリックで詳細情報を提供
+4. **パフォーマンス**: 大量のポリゴンは簡略化を検討
+
+**カラーパレットツール：**
+- [ColorBrewer](https://colorbrewer2.org/): 地図用カラーパレット
+- [Coolors](https://coolors.co/): カラーパレットジェネレーター
+- [Adobe Color](https://color.adobe.com/): ハーモニーツール
+
+### 📝 LLM活用：データ可視化の高度なプロンプト
+
+**グラデーション生成：**
+```
+「指定した2色の間を補間する関数を作成し、Leafletのコロプレスマップに適用したいです。
+
+【要件】
+- 開始色: #ffffcc (薄い黄色)
+- 終了色: #800026 (濃い赤)
+- ステップ数: 8段階
+- データ値を正規化（0-1）して色を割り当て
+- RGB補間で中間色を計算
+
+JavaScript関数と、Leafletでの使用例を提供してください。」
+```
+
+**複数変数の可視化：**
+```
+「コロプレスマップで2つの変数を同時に可視化したいです。
+
+【シナリオ】
+- 変数1: 人口密度（色の濃さで表現）
+- 変数2: 平均年齢（ハッチングパターンで表現）
+
+【技術的なアプローチ】
+- SVGのpattern要素を使用
+- 異なる角度のストライプで年齢層を表現
+- 色とパターンの組み合わせ
+- Leaflet で SVG パターンを適用する方法
+
+実装例を教えてください。」
+```
+
+**データ正規化：**
+```
+「極端な外れ値があるデータセットを、見やすく正規化してコロプレスマップに表示したいです。
+
+【問題】
+- 値の範囲: 10 〜 50000
+- 外れ値が数個あり、ほとんどは100〜1000の範囲
+- 線形スケールだと差が見えにくい
+
+【提案する解決策】
+1. 対数スケール
+2. パーセンタイルベース
+3. 標準偏差ベース
+
+それぞれの実装方法とメリット・デメリットを教えてください。」
+```
+
 ## 次のステップ
 
 - [07_wms_tms.md](07_wms_tms.md)：WMS/TMSサービスの統合

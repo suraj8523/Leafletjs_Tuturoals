@@ -631,6 +631,149 @@ onRemove: function(map) {
 }
 ```
 
+## 💪 練習問題
+
+Leaflet拡張の理解を深めるための演習です。
+
+### 演習1：カスタムマーカーの作成（初級）
+
+**課題：** アニメーション効果を持つカスタムマーカークラスを作成してください。
+
+**要件:**
+- L.Markerを継承したカスタムクラス
+- マーカー追加時にバウンスアニメーション
+- クリック時に脈動アニメーション
+- カスタムメソッドでアニメーションを制御
+
+<details>
+<summary>💡 実装のヒント</summary>
+
+```
+1. クラス定義:
+   L.AnimatedMarker = L.Marker.extend({
+       initialize: function(latlng, options) {
+           L.Marker.prototype.initialize.call(this, latlng, options);
+       },
+       onAdd: function(map) {
+           L.Marker.prototype.onAdd.call(this, map);
+           this.startAnimation();
+       }
+   });
+
+2. CSS アニメーション:
+   @keyframes bounce {
+       0%, 100% { transform: translateY(0); }
+       50% { transform: translateY(-20px); }
+   }
+
+3. アニメーション適用:
+   this._icon.style.animation = 'bounce 1s ease';
+```
+</details>
+
+### 演習2：カスタムコントロールの実装（中級）
+
+**課題：** 座標表示とコピー機能を持つカスタムコントロールを作成してください。
+
+**要件:**
+- マウス位置の座標をリアルタイム表示
+- クリックで座標をクリップボードにコピー
+- 座標形式の切り替え（度分秒/10進数）
+- コントロールの位置を設定可能
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+```
+Leaflet.jsでマウス座標を表示するカスタムコントロールを作成したいです。
+
+【要件】
+1. L.Control.extend() でカスタムコントロール作成
+2. map.on('mousemove') で座標を取得
+3. 座標を DMS（度分秒）と DD（10進数）で切り替え
+4. ボタンクリックで座標をクリップボードにコピー
+5. navigator.clipboard API を使用
+
+【技術的な詳細】
+- onAdd メソッドの実装
+- DOMイベントの処理（L.DomEvent.disableClickPropagation）
+- 座標変換関数（DD to DMS）
+- クリップボード API の使用
+
+実装例を提供してください。
+```
+</details>
+
+### 演習3：プラグインの作成と公開（上級）
+
+**課題：** 実用的なLeafletプラグインを作成し、npm/GitHubで公開できる形にしてください。
+
+**要件:**
+- UMD形式でブラウザ/Node.js両対応
+- TypeScript型定義ファイル
+- README、ライセンス、サンプルコード
+- セマンティックバージョニング
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+```
+【ステップ1: プラグイン構造】
+「Leafletプラグインのディレクトリ構造とファイル構成を教えてください。
+- src/ dist/ docs/ の役割
+- package.json の設定
+- ビルドツール（webpack/rollup）の選択
+- TypeScript vs JavaScript」
+
+【ステップ2: UMD ラッパー】
+「UMD（Universal Module Definition）形式のプラグインラッパーを実装してください。
+ブラウザ、AMD、CommonJSすべてで動作する形式で、
+Leaflet本体への依存関係を適切に処理してください。」
+
+【ステップ3: 型定義】
+「TypeScriptの型定義ファイル（.d.ts）を作成してください。
+プラグインのクラス、メソッド、オプションの型を定義し、
+IDEで型補完が効くようにしてください。」
+
+【ステップ4: npm公開】
+「npmにパッケージを公開する手順を教えてください：
+- npmアカウント作成
+- package.json の必須フィールド
+- npm publish コマンド
+- バージョンアップの方法（npm version）」
+```
+</details>
+
+### 🎓 学習のポイント
+
+**クラス拡張の原則:**
+1. 既存機能を壊さない（後方互換性）
+2. 親クラスのメソッドを適切に呼び出す
+3. イベントリスナーの適切なクリーンアップ
+4. メモリリークを防ぐ
+
+**プラグイン開発のベストプラクティス:**
+- 明確なAPIと一貫性のある命名
+- 豊富なドキュメントとサンプル
+- セマンティックバージョニング
+- テストコードの作成
+
+### 📝 LLM活用のコツ
+
+**既存プラグインの学習：**
+```
+「Leaflet.markercluster プラグインのソースコードを読んで理解したいです。
+主要なクラス、メソッド、イベント処理の流れを解説してください。
+特にパフォーマンス最適化の部分に注目して説明してください。」
+```
+
+**カスタムイベント：**
+```
+「Leafletのカスタムクラスで独自のイベントを発火させたいです。
+L.Eventedを継承し、fire()とon()を使用してイベントシステムを実装する方法を
+具体例とともに教えてください。」
+```
+
 ## おすすめのLeafletプラグイン
 
 ### 人気のプラグイン

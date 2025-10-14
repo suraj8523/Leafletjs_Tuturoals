@@ -522,6 +522,119 @@ map.getPane('customPane').style.zIndex = 500;
 map.getPane('customPane').style.display = 'none';
 ```
 
+## 💪 練習問題
+
+マップペインの理解を深めるための演習です。
+
+### 演習1：カスタムペインでレイヤーの重なり順を制御（初級）
+
+**課題：** 3つの異なるペインを作成し、z-indexを調整してレイヤーの表示順序を制御してください。
+
+**要件:**
+- 3つのカスタムペイン（背景、中間、前景）を作成
+- 各ペインに異なるz-index値を設定
+- 各ペインに円やポリゴンを追加
+- ボタンでz-indexを入れ替えて順序を変更
+
+<details>
+<summary>💡 実装のヒント</summary>
+
+```
+1. ペイン作成:
+   map.createPane('backgroundPane');
+   map.getPane('backgroundPane').style.zIndex = 250;
+
+2. レイヤーをペインに追加:
+   L.circle([lat, lng], {pane: 'backgroundPane'}).addTo(map);
+
+3. z-index変更:
+   map.getPane('backgroundPane').style.zIndex = 650;
+```
+</details>
+
+### 演習2：ラベルペインの実装（中級）
+
+**課題：** 常に最前面に表示されるラベル専用ペインを作成し、他のレイヤーの下に隠れないようにしてください。
+
+**要件:**
+- ラベル専用ペイン（z-index: 1000）
+- ラベルはクリック不可（pointerEvents: 'none'）
+- 複数の地域にラベルを配置
+- 地図をズームしてもラベルが見える
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+```
+Leaflet.jsで常に最前面に表示されるラベルレイヤーを実装したいです。
+
+【要件】
+1. カスタムペイン'labelPane'を作成（z-index: 1000）
+2. pointerEvents: 'none' でクリックイベントを無効化
+3. L.divIconを使用してテキストラベルを作成
+4. ラベルは白背景、黒枠の見やすいスタイル
+5. 複数のラベルを配置
+
+【実装例】
+- ペインの作成と設定
+- divIconのHTML/CSSスタイリング
+- labelPaneへのマーカー追加
+
+コード例を提供してください。
+```
+</details>
+
+### 演習3：動的ペイン管理システム（上級）
+
+**課題：** レイヤーカテゴリーごとにペインを動的に作成し、z-indexを管理するシステムを実装してください。
+
+**要件:**
+- レイヤー設定からペインを自動生成
+- ドラッグ&ドロップでz-index順序を変更
+- 現在のペイン一覧と順序を表示
+- 設定をLocalStorageに保存
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+```
+【ステップ1: ペイン管理構造】
+「複数のペインとz-indexを管理するデータ構造を設計してください。
+var paneConfig = {
+    'roads': {zIndex: 400, layers: [...]},
+    'buildings': {zIndex: 450, layers: [...]}
+};
+この構造でペインを動的に作成・管理する方法を教えてください。」
+
+【ステップ2: UI with Drag & Drop】
+「HTML5 Drag and Drop APIを使用して、ペインの順序を変更できるUIを実装してください。
+- draggable属性を持つリスト要素
+- dragstart, dragover, drop イベント
+- ドロップ時にz-indexを再計算
+- 視覚的なフィードバック」
+
+【ステップ3: LocalStorage 永続化】
+「ペイン設定をLocalStorageに保存し、復元する機能を実装してください。」
+```
+</details>
+
+### 🎓 学習のポイント
+
+**z-index の管理:**
+1. デフォルトペインの範囲を把握（200-700）
+2. カスタムペインは適切な範囲に配置
+3. 相対的な順序を維持する設計
+4. 動的変更時の再描画を考慮
+
+### 📝 LLM活用のコツ
+
+**ペインのデバッグ：**
+```
+「Leafletのマップペインが期待通りに表示されません。
+z-indexは正しく設定していますが、レイヤーの順序がおかしいです。
+デバッグ方法と確認すべきポイントを教えてください。」
+```
+
 ## 次のステップ
 
 - [10_extending_leaflet.md](10_extending_leaflet.md)：Leafletの拡張方法

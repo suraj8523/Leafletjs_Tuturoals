@@ -523,6 +523,268 @@ var wmtsLayer = L.tileLayer('https://example.com/wmts/layer/{TileMatrix}/{TileRo
 3. キャッシュを活用
 4. 不要なレイヤーは非表示に
 
+## 💪 練習問題
+
+WMS/TMSサービスの統合理解を深めるための演習です。
+
+### 演習1：複数のWMSレイヤーの切り替え（初級）
+
+**課題：** 国土地理院の異なるWMSレイヤー（標準地図、淡色地図、写真）をレイヤーコントロールで切り替えられるようにしてください。
+
+**要件：**
+- 3種類の地理院タイルをベースマップとして登録
+- レイヤーコントロールで切り替え
+- 各レイヤーに適切な attribution を設定
+- デフォルトは標準地図を表示
+
+<details>
+<summary>💡 実装のヒント</summary>
+
+```
+1. 各タイルレイヤーを定義：
+   var gsiStandard = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {...});
+   var gsiPale = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {...});
+   var gsiPhoto = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', {...});
+
+2. baseMaps オブジェクトにまとめる
+
+3. L.control.layers(baseMaps, null).addTo(map);
+
+4. デフォルト表示: gsiStandard.addTo(map);
+```
+</details>
+
+### 演習2：WMSパラメータのカスタマイズ（中級）
+
+**課題：** WMSレイヤーに時系列パラメータを追加し、スライダーで時間を変更できる機能を実装してください。
+
+**要件：**
+- TIME パラメータをサポートするWMSサービスを使用
+- HTMLスライダーで時間を選択
+- スライダー変更時にWMSレイヤーを更新
+- 現在選択中の時間を表示
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+**ChatGPT/Claude等へのプロンプト：**
+
+```
+Leaflet.jsのWMSレイヤーで時系列データを表示し、スライダーで時間を変更したいです。
+
+【現在の状態】
+- 基本的なWMSレイヤーは表示済み
+- WMSサービスは TIME パラメータをサポート
+
+【実現したい機能】
+1. HTML range input で時間を選択（例: 2024-01-01 から 2024-12-31）
+2. スライダー変更時にWMSのTIMEパラメータを更新
+3. WMSレイヤーを再描画
+4. 選択中の日付をテキスト表示
+
+【技術的な要求】
+- L.tileLayer.wms() のパラメータを動的に変更
+- wmsLayer.setParams({time: newTime}) で更新
+- 日付フォーマットは ISO 8601 (YYYY-MM-DD)
+- スライダー値（0-365）を日付に変換
+
+【コードスタイル】
+- 日本語コメント
+- 日付計算は関数で分離
+- 初心者にもわかりやすい実装
+```
+
+**実装のコアアイディア：**
+```javascript
+var wmsLayer = L.tileLayer.wms('https://example.com/wms', {
+    layers: 'temperature',
+    format: 'image/png',
+    transparent: true,
+    time: '2024-01-01'
+}).addTo(map);
+
+var slider = document.getElementById('timeSlider');
+var dateDisplay = document.getElementById('currentDate');
+
+slider.addEventListener('input', function(e) {
+    var days = parseInt(e.target.value);
+    var date = new Date('2024-01-01');
+    date.setDate(date.getDate() + days);
+
+    var dateString = date.toISOString().split('T')[0];
+
+    wmsLayer.setParams({
+        time: dateString
+    }, false);  // noRedraw=false で即座に更新
+
+    dateDisplay.textContent = dateString;
+});
+```
+</details>
+
+### 演習3：複数WMSレイヤーの透明度制御（上級）
+
+**課題：** 複数のWMSレイヤーを重ねて表示し、各レイヤーの透明度を個別にスライダーで制御できるシステムを実装してください。
+
+**要件：**
+- 3つのWMSレイヤー（地形、道路、建物など）
+- 各レイヤー用の透明度スライダー
+- チェックボックスでレイヤーのオン/オフ
+- 透明度の値（0-100%）を表示
+- 設定をLocalStorageに保存
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+**段階的なアプローチ：**
+
+```
+【ステップ1: レイヤー管理構造】
+「複数のWMSレイヤーと設定を管理するオブジェクト構造を設計してください。
+
+【データ構造】
+var wmsLayers = {
+    'terrain': {
+        layer: L.tileLayer.wms(...),
+        opacity: 1.0,
+        visible: true
+    },
+    'roads': {
+        layer: L.tileLayer.wms(...),
+        opacity: 0.7,
+        visible: true
+    }
+};
+
+この構造で透明度と表示/非表示を管理する方法を教えてください。」
+
+【ステップ2: UI作成】
+「各WMSレイヤー用のコントロールパネルを動的に生成してください：
+- レイヤー名のチェックボックス
+- 透明度スライダー（0-100）
+- 現在の透明度表示
+- for...in ループで wmsLayers から自動生成
+- CSSでスタイリング」
+
+【ステップ3: イベント処理】
+「スライダーとチェックボックスのイベント処理を実装してください：
+- スライダー変更時に layer.setOpacity()
+- チェックボックス変更時に map.addLayer() / removeLayer()
+- リアルタイムで透明度値を更新表示
+- デバウンス処理は不要」
+
+【ステップ4: 永続化】
+「レイヤー設定をLocalStorageに保存し、復元してください：
+- 各変更時に自動保存
+- ページ読み込み時に復元
+- JSONとして保存（opacity, visible）
+- 保存失敗時のエラーハンドリング」
+```
+
+**重要な概念：**
+```javascript
+var wmsConfig = {
+    'terrain': {
+        url: 'https://example.com/wms',
+        options: {layers: 'terrain', transparent: true},
+        opacity: 1.0,
+        visible: true
+    }
+};
+
+function initializeWMSLayers() {
+    for (var key in wmsConfig) {
+        var config = wmsConfig[key];
+        var layer = L.tileLayer.wms(config.url, config.options);
+
+        layer.setOpacity(config.opacity);
+        if (config.visible) {
+            layer.addTo(map);
+        }
+
+        wmsConfig[key].layer = layer;
+
+        createLayerControl(key, config);
+    }
+}
+
+function updateOpacity(layerKey, opacity) {
+    var config = wmsConfig[layerKey];
+    config.opacity = opacity;
+    config.layer.setOpacity(opacity);
+    saveToLocalStorage();
+}
+
+function saveToLocalStorage() {
+    var settings = {};
+    for (var key in wmsConfig) {
+        settings[key] = {
+            opacity: wmsConfig[key].opacity,
+            visible: wmsConfig[key].visible
+        };
+    }
+    localStorage.setItem('wmsSettings', JSON.stringify(settings));
+}
+```
+</details>
+
+### 🎓 学習のポイント
+
+**WMS/TMSの使い分け：**
+
+1. **WMS**: 動的、カスタマイズ可能、サーバー負荷高
+2. **TMS**: 高速、キャッシュ可能、固定スタイル
+3. **選択基準**: リアルタイム性 vs パフォーマンス
+
+**パフォーマンス最適化：**
+- タイルのキャッシュ戦略
+- 不要なレイヤーは削除
+- 画像フォーマットの選択（PNG vs JPEG）
+- maxZoom 設定でリクエスト制限
+
+### 📝 LLM活用：外部サービス統合のプロンプト
+
+**CORS問題の解決：**
+```
+「LeafletでWMSレイヤーを読み込む際にCORSエラーが発生します。
+
+【エラーメッセージ】
+Access to XMLHttpRequest at 'https://example.com/wms' from origin 'http://localhost'
+has been blocked by CORS policy
+
+【状況】
+- ローカル開発環境で実行中
+- 外部のWMSサービスを使用
+- ブラウザはChrome
+
+【質問】
+1. CORS問題の原因と仕組み
+2. 開発環境での回避方法（プロキシサーバーなど）
+3. 本番環境での対処法
+4. Leafletでの設定方法
+
+実用的な解決策を教えてください。」
+```
+
+**GetFeatureInfo の実装：**
+```
+「LeafletのWMSレイヤーをクリックして、その地点の詳細情報を取得したいです。
+
+【技術的な要求】
+- WMS GetFeatureInfo リクエストを使用
+- クリック座標からピクセル座標を計算
+- XMLまたはJSONレスポンスをパース
+- ポップアップで情報を表示
+
+【知りたいこと】
+1. GetFeatureInfo リクエストのパラメータ構築方法
+2. Leafletでの座標変換（LatLng → Pixel）
+3. レスポンス形式の選択（GML, JSON, HTML）
+4. エラーハンドリング
+
+実装例とベストプラクティスを教えてください。」
+```
+
 ## 次のステップ
 
 - [08_overlays.md](08_overlays.md)：画像、ビデオ、SVGオーバーレイ

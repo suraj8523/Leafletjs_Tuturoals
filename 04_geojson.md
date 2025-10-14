@@ -662,6 +662,279 @@ var geojsonLayer = L.geoJSON(data).addTo(map);
 map.removeLayer(geojsonLayer);
 ```
 
+## 💪 練習問題
+
+GeoJSONデータの扱いを習得するための演習です。
+
+### 演習1：カテゴリー別フィルタリング（初級）
+
+**課題：** GeoJSONデータから特定のカテゴリーのフィーチャーのみを表示する機能を実装してください。
+
+**要件：**
+- 「観光地」「飲食店」「宿泊施設」のボタンを追加
+- ボタンをクリックすると該当カテゴリーのみ表示
+- 「すべて表示」ボタンも追加
+
+<details>
+<summary>💡 実装のヒント</summary>
+
+```
+1. GeoJSONデータの各フィーチャーに category プロパティを持たせる
+
+2. filter オプションを使用：
+   L.geoJSON(data, {
+       filter: function(feature) {
+           return feature.properties.category === selectedCategory;
+       }
+   }).addTo(map);
+
+3. ボタンクリック時に：
+   - 既存のGeoJSONレイヤーを削除
+   - フィルター条件を変更
+   - 新しいGeoJSONレイヤーを追加
+
+4. ボタンの配置はHTML内に <div id="filter-buttons"></div> を用意
+```
+</details>
+
+### 演習2：外部GeoJSONファイルの読み込みと検索（中級）
+
+**課題：** 外部GeoJSONファイルを読み込み、名前で検索できる機能を実装してください。
+
+**要件：**
+- fetch APIで外部GeoJSONファイルを読み込み
+- 検索ボックスで場所の名前を検索
+- 検索結果をリスト表示
+- リストをクリックするとその場所にズーム
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+**ChatGPT/Claude等へのプロンプト：**
+
+```
+Leaflet.jsで外部GeoJSONファイルから場所を検索する機能を実装したいです。
+
+【現在の状態】
+- 基本的なLeafletマップは実装済み
+- places.geojson に複数の場所データあり
+
+【実現したい機能】
+1. 検索ボックスにテキスト入力
+2. GeoJSONデータから部分一致で検索
+3. 検索結果を以下の形式でリスト表示：
+   - 場所名
+   - カテゴリー
+   - クリックで地図移動＋ポップアップ表示
+
+【技術的な要求】
+- fetch() で GeoJSON を読み込み
+- Array.filter() で検索
+- 検索結果は <ul> リストで表示
+- クリック時は map.setView() と popup.openOn()
+
+【データ構造】
+GeoJSON の properties に以下が含まれる：
+- name: 場所名
+- category: カテゴリー
+- description: 説明
+
+【コードスタイル】
+- 日本語コメント
+- 検索のデバウンス処理を含める（300ms）
+- 初心者にもわかりやすい実装
+```
+
+**実装のコアアイディア：**
+```javascript
+var geojsonData = null;
+var geojsonLayer = null;
+
+// GeoJSONを読み込み
+fetch('places.geojson')
+    .then(response => response.json())
+    .then(data => {
+        geojsonData = data;
+        displayGeoJSON(data);
+    });
+
+// 検索機能
+var searchInput = document.getElementById('search');
+var searchDebounce = null;
+
+searchInput.addEventListener('input', function(e) {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(function() {
+        var query = e.target.value.toLowerCase();
+        var results = geojsonData.features.filter(function(feature) {
+            return feature.properties.name.toLowerCase().includes(query);
+        });
+        displaySearchResults(results);
+    }, 300);
+});
+```
+</details>
+
+### 演習3：動的GeoJSON生成とリアルタイム更新（上級）
+
+**課題：** ユーザーがマップ上をクリックすると、その位置にポイントを追加し、GeoJSON形式でエクスポートできる機能を実装してください。
+
+**要件：**
+- マップクリックでポイント追加
+- 各ポイントに名前とカテゴリーを設定するフォーム
+- ポイントの編集・削除機能
+- GeoJSONをファイルとしてダウンロード
+- LocalStorageに保存して再読み込み時に復元
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+**段階的なアプローチ：**
+
+```
+【ステップ1: クリックでポイント追加】
+「Leaflet.jsでマップクリック時にGeoJSONフィーチャーを動的に追加する機能を実装してください。
+- map.on('click') でクリック位置を取得
+- モーダルフォームで名前とカテゴリーを入力
+- 入力後、GeoJSONオブジェクトに追加
+- L.geoJSON() で再描画」
+
+【ステップ2: 編集・削除機能】
+「追加したポイントを右クリックで編集または削除できる機能を追加してください：
+- layer.on('contextmenu') でコンテキストメニュー表示
+- 編集モードでフォームに現在の値を表示
+- 削除時は確認ダイアログを表示
+- GeoJSONオブジェクトから該当フィーチャーを削除」
+
+【ステップ3: エクスポート機能】
+「現在のGeoJSONデータをファイルとしてダウンロードする機能を実装してください：
+- JSON.stringify() で文字列化
+- Blob オブジェクトを作成
+- ダウンロードリンクを動的生成
+- ファイル名は 'places_[日付].geojson' 形式」
+
+【ステップ4: LocalStorage 保存】
+「GeoJSONデータをLocalStorageに自動保存し、再読み込み時に復元してください：
+- データ変更時に localStorage.setItem()
+- ページ読み込み時に localStorage.getItem()
+- データサイズの制限チェック（5MB程度）
+- クリアボタンで保存データを削除」
+```
+
+**重要な概念：**
+```javascript
+var myGeoJSON = {
+    type: "FeatureCollection",
+    features: []
+};
+
+// 新しいポイントを追加
+function addPoint(latlng, properties) {
+    var newFeature = {
+        type: "Feature",
+        properties: properties,
+        geometry: {
+            type: "Point",
+            coordinates: [latlng.lng, latlng.lat]
+        }
+    };
+    myGeoJSON.features.push(newFeature);
+    updateMap();
+    saveToLocalStorage();
+}
+
+// GeoJSONをエクスポート
+function exportGeoJSON() {
+    var dataStr = JSON.stringify(myGeoJSON, null, 2);
+    var blob = new Blob([dataStr], {type: 'application/json'});
+    var url = URL.createObjectURL(blob);
+
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = 'my_places.geojson';
+    link.click();
+}
+```
+</details>
+
+### 🎓 学習のポイント
+
+**GeoJSONデータ処理の考え方：**
+
+1. **座標の順序**: GeoJSONは [経度, 緯度]、Leafletは [緯度, 経度]
+2. **プロパティ活用**: properties にメタデータを保存
+3. **フィルタリング**: filter オプションで柔軟な表示制御
+4. **パフォーマンス**: 大量データはクラスタリング検討
+
+**デバッグのコツ：**
+- [geojson.io](https://geojson.io/) でGeoJSONを可視化
+- [geojsonlint.com](https://geojsonlint.com/) で構文チェック
+- ブラウザコンソールで `console.log(JSON.stringify(geojson, null, 2))`
+- 座標順序の間違いに注意
+
+### 📝 LLM活用：GeoJSONデータ変換プロンプト
+
+**CSV to GeoJSON変換：**
+```
+「以下のCSVデータをGeoJSON形式に変換するJavaScriptコードを書いてください：
+
+【CSVデータ】
+name,lat,lng,category
+東京タワー,35.6586,139.7454,観光地
+東京駅,35.6812,139.7671,駅
+
+【要件】
+1. ヘッダー行をスキップ
+2. 各行をGeoJSON Featureに変換
+3. FeatureCollectionとして出力
+4. エラーハンドリング（不正な座標値など）
+
+ブラウザで動作するコードを提供してください。」
+```
+
+**複雑なジオメトリの生成：**
+```
+「Leaflet.jsで円形のバッファー（指定半径）を持つGeoJSONポリゴンを生成したいです。
+
+【入力】
+- 中心点の座標（緯度・経度）
+- 半径（メートル）
+- 頂点数（デフォルト: 64）
+
+【出力】
+- GeoJSON Polygon形式
+
+【技術的な要求】
+- 地球を球体として扱う
+- Haversine公式で座標計算
+- 結果をL.geoJSON()で表示可能な形式に
+
+実装例とともに、どのように動作するか説明してください。」
+```
+
+**データマージ：**
+```
+「2つのGeoJSON FeatureCollectionをマージし、プロパティでグループ化したいです。
+
+【シナリオ】
+- geojson1: 2023年のデータ
+- geojson2: 2024年のデータ
+- 同じ場所（name プロパティで判定）なら properties に年度別データを追加
+
+【期待する出力】
+{
+  "type": "Feature",
+  "properties": {
+    "name": "東京タワー",
+    "data_2023": {...},
+    "data_2024": {...}
+  },
+  "geometry": {...}
+}
+
+JavaScriptでマージする関数を実装してください。」
+```
+
 ## 次のステップ
 
 - [05_layer_groups_control.md](05_layer_groups_control.md)：レイヤーグループとコントロール

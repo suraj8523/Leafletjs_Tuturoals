@@ -428,6 +428,202 @@ var noShadowIcon = L.icon({
 });
 ```
 
+## 💪 練習問題
+
+カスタムアイコンの理解を深めるための演習です。
+
+### 演習1：カテゴリー別アイコン（初級）
+
+**課題：** 自分の地域の施設を3つのカテゴリー（飲食店、病院、学校）に分けて、それぞれ異なる色のアイコンで表示してください。
+
+**要件：**
+- 各カテゴリー最低2つずつのマーカー
+- 色分けされたアイコン（赤、青、緑など）
+- ポップアップにカテゴリー名と施設名を表示
+
+<details>
+<summary>💡 実装のヒント</summary>
+
+```
+1. カラーマーカーのURL：
+   赤: marker-icon-2x-red.png
+   青: marker-icon-2x-blue.png
+   緑: marker-icon-2x-green.png
+
+2. データ構造の例：
+   var facilities = [
+       {name: "〇〇レストラン", category: "restaurant", coords: [緯度, 経度]},
+       {name: "△△病院", category: "hospital", coords: [緯度, 経度]},
+       // ...
+   ];
+
+3. カテゴリーからアイコンへのマッピングを作成
+```
+</details>
+
+### 演習2：DivIconでカスタムデザイン（中級）
+
+**課題：** DivIconを使って、数字と背景色を持つカスタムマーカーを作成してください。
+
+**要件：**
+- 1〜5の番号付きマーカーを作成
+- 各マーカーの背景色をグラデーションで変化させる
+- マーカーをクリックすると詳細情報を表示
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+**ChatGPT/Claude等へのプロンプト：**
+
+```
+Leaflet.jsのDivIconを使って、以下の要件を満たすカスタムマーカーを作成してください：
+
+【要件】
+1. 1〜5の番号を表示する円形マーカー
+2. 番号ごとに背景色を変える（1=赤、2=オレンジ、...、5=青のグラデーション）
+3. 番号は白色、中央揃え
+4. CSS flexboxで中央配置
+5. border-radius: 50% で円形にする
+
+【コードスタイル】
+- JavaScript関数で番号から色を返す
+- HTMLに数字を埋め込む
+- 日本語コメント付き
+```
+
+**実装のコアアイディア：**
+```javascript
+function getColorForNumber(n) {
+    var colors = ['#e74c3c', '#e67e22', '#f1c40f', '#3498db', '#9b59b6'];
+    return colors[n - 1];
+}
+
+function createNumberedIcon(number) {
+    return L.divIcon({
+        html: "<div style='background:" + getColorForNumber(number) +
+              "; color: white; width: 30px; height: 30px; " +
+              "border-radius: 50%; display: flex; align-items: center; " +
+              "justify-content: center; font-weight: bold; border: 2px solid white;'>" +
+              number + "</div>",
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+    });
+}
+```
+</details>
+</details>
+
+### 演習3：アイコンアニメーション（上級）
+
+**課題：** マーカーをクリックすると一時的にサイズが大きくなるアニメーションを実装してください。
+
+**要件：**
+- クリック時にアイコンが1.5倍に拡大
+- 1秒後に元のサイズに戻る
+- CSSトランジションを使用
+
+<details>
+<summary>💡 LLM活用プロンプト例</summary>
+
+**複雑な機能のためのプロンプト構成：**
+
+```
+Leaflet.jsのカスタムアイコンマーカーに、クリック時のアニメーション効果を追加したいです。
+
+【現在の状態】
+[あなたの現在のコードを貼り付け]
+
+【実現したい機能】
+1. マーカーをクリックすると、アイコンが1.5倍に拡大
+2. 1秒後に元のサイズに戻る
+3. CSSの transition を使ってスムーズにアニメーション
+
+【技術的な要求】
+- marker.getElement() でDOMにアクセス
+- marker.on('click', callback) でイベントリスナーを追加
+- CSS transform: scale() を使用
+- setTimeout で元に戻す
+- transition: transform 0.3s ease でアニメーション
+
+【参考にしたいアプローチ】
+マーカーのDOM要素に直接スタイルを適用する方法を教えてください。
+```
+
+**実装の重要ポイント：**
+```javascript
+marker.on('click', function(e) {
+    var icon = e.target._icon;
+
+    // 拡大
+    icon.style.transform = 'scale(1.5)';
+    icon.style.transition = 'transform 0.3s ease';
+
+    // 1秒後に元に戻す
+    setTimeout(function() {
+        icon.style.transform = 'scale(1)';
+    }, 1000);
+});
+```
+</details>
+
+### 🎓 学習のポイント
+
+**アイコンカスタマイズの考え方：**
+
+1. **L.Icon**: 画像ベース、詳細な設定が可能
+2. **L.DivIcon**: HTML/CSSベース、柔軟性が高い
+3. **トレードオフ**: パフォーマンス vs カスタマイズ性
+
+**デバッグのコツ：**
+- ブラウザの開発者ツールで要素を検査
+- `console.log(marker._icon)` でDOM要素を確認
+- iconAnchorのずれは視覚的に調整
+
+### 📝 LLM活用：段階的な改良プロンプト
+
+複雑なカスタマイズは段階的に：
+
+```
+【ステップ1: 基本実装】
+「Leaflet.jsでDivIconを使って番号付きマーカーを作成してください」
+
+【ステップ2: スタイル改善】
+「前のコードに、グラデーションの背景色と影を追加してください」
+
+【ステップ3: インタラクション追加】
+「マーカーにホバー効果（色が薄くなる）を追加してください」
+
+【ステップ4: アニメーション】
+「クリック時にバウンスアニメーションを追加してください」
+```
+
+**改良を依頼する際のポイント：**
+- 前のコードを必ず含める
+- 何を変更したいか明確に
+- 既存の動作を保持するか指定
+
+### 🔧 よくあるカスタマイズのプロンプト集
+
+**1. SVGアイコンを使用：**
+```
+「Leaflet.jsのカスタムアイコンで、SVGのカメラアイコンを使いたいです。
+SVGコードをiconUrlの代わりにどう指定すれば良いですか？
+data URI形式の例を教えてください。」
+```
+
+**2. アイコンのツールチップ：**
+```
+「L.Iconで作成したマーカーに、ホバー時に表示されるツールチップを
+追加したいです。bindTooltip()メソッドの使用例を教えてください。」
+```
+
+**3. クラスタリング準備：**
+```
+「多数のカスタムアイコンマーカーを表示する予定です。
+パフォーマンスを考慮したアイコン作成のベストプラクティスを教えてください。
+（アイコンの再利用、メモリ効率など）」
+```
+
 ## 次のステップ
 
 - [03_mobile_map.md](03_mobile_map.md)：モバイル対応マップ
